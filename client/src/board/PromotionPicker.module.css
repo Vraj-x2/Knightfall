@@ -1,0 +1,29 @@
+.backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #0007;
+  z-index: 10;
+}
+.picker {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 30px #0006;
+}
+.choice {
+  --square: min(16vw, 72px);
+  width: var(--square);
+  height: var(--square);
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--square-light);
+  cursor: pointer;
+}
+.choice:hover,
+.choice:focus-visible { border-color: var(--accent); }

@@ -1,0 +1,37 @@
+.piece {
+  position: relative;
+  z-index: 2;
+  display: block;
+  font-size: calc(var(--square) * 0.8);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+.white {
+  color: var(--piece-white);
+  text-shadow: 0 0 1px #000, 0 0 1px #000, 0 0 2px #000;
+}
+.black {
+  color: var(--piece-black);
+  text-shadow: 0 0 1px #fff6;
+}
+.floating {
+  filter: drop-shadow(0 6px 6px #0006);
+}
+.slide {
+  z-index: 5;
+  animation: slide 180ms ease-out;
+}
+@keyframes slide {
+  from {
+    transform: translate(calc(var(--dx) * var(--square)), calc(var(--dy) * var(--square)));
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide {
+    animation: none;
+  }
+}

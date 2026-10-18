@@ -1,0 +1,50 @@
+.square {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--square);
+  height: var(--square);
+}
+.square:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  z-index: 4;
+}
+.light { background: var(--square-light); }
+.dark { background: var(--square-dark); }
+.lastMove::before,
+.selected::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--highlight-last);
+}
+.selected::before { background: var(--highlight-selected); }
+.check { background-image: radial-gradient(circle, var(--check-glow) 0%, transparent 72%); }
+.dot {
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: var(--legal-dot);
+  z-index: 1;
+}
+.ring {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  border: calc(var(--square) * 0.09) solid var(--legal-dot);
+  z-index: 1;
+}
+.label {
+  position: absolute;
+  font-size: calc(var(--square) * 0.2);
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 3;
+}
+.rank { top: 4%; left: 6%; }
+.file { bottom: 4%; right: 6%; }
+.light .label { color: var(--square-dark); }
+.dark .label { color: var(--square-light); }

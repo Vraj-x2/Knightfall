@@ -1,0 +1,94 @@
+.lobby {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2.5rem 16px 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  text-align: center;
+}
+.hero { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; animation: rise 500ms ease both; }
+.title {
+  margin: 0.4rem 0 0;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+.tagline { margin: 0; max-width: 34rem; color: var(--muted); font-size: 1.05rem; }
+.nameField {
+  margin-top: 0.4rem;
+  width: min(100%, 18rem);
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+.nameField:focus { outline: none; border-color: var(--brand); }
+
+.cards {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1.25rem;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.4rem;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  animation: rise 500ms 120ms ease both;
+}
+.card + .card { animation-delay: 220ms; }
+.card > :global(.btn) { margin-top: auto; }
+.cardHead { display: flex; align-items: center; gap: 0.9rem; }
+.cardHead h2 { margin: 0; font-size: 1.2rem; }
+.cardHead p { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.9rem; }
+.cardIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  font-size: 1.8rem;
+  color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface));
+}
+.cardIconAlt { color: #ea580c; background: color-mix(in srgb, #ea580c 12%, var(--surface)); }
+
+.field { border: 0; margin: 0; padding: 0; min-width: 0; }
+.label { padding: 0; margin-bottom: 0.5rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.6rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms, color 120ms;
+}
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip small { font-size: 0.68rem; font-weight: 500; color: var(--muted); }
+.chip:hover { border-color: var(--brand); }
+.chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chipOn { border-color: var(--brand); background: var(--brand); color: #fff; }
+.chipOn small { color: inherit; }
+.error { margin: 0; color: var(--danger); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .hero, .card { animation: none; } .chip { transition: none; } }

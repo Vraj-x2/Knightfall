@@ -1,0 +1,25 @@
+.board {
+  --square: calc(min(92vw, 75vh, 640px) / 8);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, var(--square));
+  grid-template-rows: repeat(8, var(--square));
+  width: min(92vw, 75vh, 640px);
+  aspect-ratio: 1;
+  touch-action: none;
+  user-select: none;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px #0004;
+}
+.floating {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  pointer-events: none;
+  will-change: transform;
+}
+.row {
+  display: contents;
+}
