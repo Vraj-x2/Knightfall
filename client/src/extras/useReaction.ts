@@ -19,6 +19,9 @@ export function useReaction(): Reaction | null {
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const seen = useRef<number | null>(null);
   const lastPly = useRef(-COOLDOWN_PLIES);
+  // Bumped on rematch and unmount. A GIF still loading when the next move lands should still show,
+  // so only a new game (or leaving) drops it.
+  const epoch = useRef(0);
   const { moves, myColor } = state;
 
   useEffect(() => {
@@ -26,7 +29,12 @@ export function useReaction(): Reaction | null {
     const before = seen.current;
     seen.current = moves.length;
     if (before === null) return; // history delivered on join: no reactions
-    if (moves.length < before) lastPly.current = -COOLDOWN_PLIES; // rematch
+    if (moves.length < before) {
+      // A rematch started.
+      lastPly.current = -COOLDOWN_PLIES;
+      epoch.current++;
+      setReaction(null);
+    }
     if (moves.length !== before + 1) return;
 
     const ply = moves.length - 1;
@@ -35,18 +43,23 @@ export function useReaction(): Reaction | null {
     if (!moment || (moment !== 'checkmate' && ply - lastPly.current < COOLDOWN_PLIES)) return;
     lastPly.current = ply;
 
-    let cancelled = false;
+    const started = epoch.current;
+    const current = () => epoch.current === started;
     void findReaction(moment).then((found) => {
-      if (!found || cancelled) return;
+      if (!found || !current()) return;
       // Show it only once loaded, so it doesn't pop in half-drawn.
       const img = new Image();
-      img.onload = () => !cancelled && setReaction(found);
+      img.onload = () => current() && setReaction(found);
       img.src = found.url;
     });
-    return () => {
-      cancelled = true;
-    };
   }, [moves, myColor, game]);
+
+  useEffect(
+    () => () => {
+      epoch.current++;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!reaction) return;

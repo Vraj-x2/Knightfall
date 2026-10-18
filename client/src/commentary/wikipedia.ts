@@ -1,3 +1,5 @@
+import { readJson, writeJson } from '../storage';
+
 // Finds a fun fact about an opening on Wikipedia. Pages are CC BY-SA, so every fact keeps a link to its article.
 export type OpeningFact = { title: string; url: string; text: string };
 
@@ -8,21 +10,8 @@ const STORE_KEY = 'chess-opening-facts';
 const cache = new Map<string, Promise<OpeningFact | null>>();
 
 // Facts found earlier, kept across visits so a repeated opening never calls Wikipedia again.
-function stored(): Record<string, OpeningFact | null> {
-  try {
-    return JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
-
-function remember(opening: string, fact: OpeningFact | null) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ ...stored(), [opening]: fact }));
-  } catch {
-    // Storage blocked or full: the fact lasts for this visit only.
-  }
-}
+const stored = () => readJson<Record<string, OpeningFact | null>>(STORE_KEY) ?? {};
+const remember = (opening: string, fact: OpeningFact | null) => writeJson(STORE_KEY, { ...stored(), [opening]: fact });
 
 class LookupFailed extends Error {}
 

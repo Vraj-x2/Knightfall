@@ -1,3 +1,5 @@
+import { readItem, writeItem } from '../storage';
+
 // Synthesised with Web Audio so there are no asset files to ship or license.
 export type SoundKind = 'move' | 'capture' | 'check' | 'castle' | 'end';
 
@@ -15,22 +17,14 @@ export function soundKindFor(san: string): SoundKind {
 
 export function isMuted(): boolean {
   if (muted === null) {
-    try {
-      muted = localStorage.getItem(MUTE_KEY) === '1';
-    } catch {
-      muted = false;
-    }
+    muted = readItem(MUTE_KEY) === '1';
   }
   return muted;
 }
 
 export function setMuted(value: boolean) {
   muted = value;
-  try {
-    localStorage.setItem(MUTE_KEY, value ? '1' : '0');
-  } catch {
-    // Storage blocked: the choice lasts until the page closes.
-  }
+  writeItem(MUTE_KEY, value ? '1' : '0');
 }
 
 function tone(audio: AudioContext, freq: number, at: number, duration: number, gain: number, type: OscillatorType) {

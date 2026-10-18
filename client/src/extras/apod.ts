@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '../storage';
 import { fetchJson } from './fetchJson';
 
 // NASA's Astronomy Picture of the Day. The shared DEMO_KEY allows only a few calls an hour per address,
@@ -13,21 +14,11 @@ type ApodAnswer = { date: string; title: string; media_type: string; url: string
 const localDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 function cached(today: string): SpacePicture | null {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null') as { fetchedOn: string; picture: SpacePicture } | null;
-    return saved?.fetchedOn === today ? saved.picture : null;
-  } catch {
-    return null;
-  }
+  const saved = readJson<{ fetchedOn: string; picture: SpacePicture }>(STORE_KEY);
+  return saved?.fetchedOn === today ? saved.picture : null;
 }
 
-function save(today: string, picture: SpacePicture) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ fetchedOn: today, picture }));
-  } catch {
-    // Storage blocked: fetched again next visit.
-  }
-}
+const save = (today: string, picture: SpacePicture) => writeJson(STORE_KEY, { fetchedOn: today, picture });
 
 function toPicture(a: ApodAnswer): SpacePicture | null {
   // Some days are videos; their thumbnail still makes a good background.

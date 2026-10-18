@@ -1,4 +1,5 @@
 import type { ClientMessage, ServerMessage, TimeControl } from './protocol';
+import { readItem, writeItem } from '../storage';
 
 export type ConnectionStatus = 'connecting' | 'open' | 'reconnecting' | 'closed';
 
@@ -95,37 +96,12 @@ export function createRoom(timeControl?: TimeControl): Promise<string> {
 
 const tokenKey = (roomId: string) => `chess-token:${roomId}`;
 
-export function loadToken(roomId: string): string | undefined {
-  try {
-    return localStorage.getItem(tokenKey(roomId)) ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-export function saveToken(roomId: string, token: string) {
-  try {
-    localStorage.setItem(tokenKey(roomId), token);
-  } catch {
-    // Storage blocked: refresh will lose the seat, play still works.
-  }
-}
+export const loadToken = (roomId: string): string | undefined => readItem(tokenKey(roomId)) ?? undefined;
+// If storage is blocked, a refresh loses the seat; play still works.
+export const saveToken = (roomId: string, token: string) => writeItem(tokenKey(roomId), token);
 
 const NAME_KEY = 'chess-name';
 export const MAX_NAME_LENGTH = 20;
 
-export function loadName(): string {
-  try {
-    return localStorage.getItem(NAME_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
-
-export function saveName(name: string) {
-  try {
-    localStorage.setItem(NAME_KEY, name);
-  } catch {
-    // Storage blocked: the name lasts for this page only.
-  }
-}
+export const loadName = (): string => readItem(NAME_KEY) ?? '';
+export const saveName = (name: string) => writeItem(NAME_KEY, name);

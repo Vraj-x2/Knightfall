@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
 import { getSpacePicture, type SpacePicture } from './apod';
+import { readItem, writeItem } from '../storage';
 import styles from './SpaceBackground.module.css';
 
 const HIDE_KEY = 'chess-space-hidden';
-
-function loadHidden(): boolean {
-  try {
-    return localStorage.getItem(HIDE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
+const loadHidden = () => readItem(HIDE_KEY) === '1';
+// The URL comes from NASA's answer; escaping keeps a stray quote or bracket from breaking out of url("…").
+const cssUrl = (url: string) => `url("${encodeURI(url).replace(/["()\\]/g, (c) => `%${c.charCodeAt(0).toString(16)}`)}")`;
 
 // NASA's picture of the day behind every page, softened so the board stays readable, with its credit.
 export function SpaceBackground() {
@@ -27,17 +23,13 @@ export function SpaceBackground() {
 
   function toggle() {
     setHidden(!hidden);
-    try {
-      localStorage.setItem(HIDE_KEY, hidden ? '0' : '1');
-    } catch {
-      // Storage blocked: the choice lasts until the page closes.
-    }
+    writeItem(HIDE_KEY, hidden ? '0' : '1');
   }
 
   if (!picture) return null;
   return (
     <>
-      {!hidden && <div className={styles.backdrop} style={{ backgroundImage: `url("${picture.imageUrl}")` }} aria-hidden="true" />}
+      {!hidden && <div className={styles.backdrop} style={{ backgroundImage: cssUrl(picture.imageUrl) }} aria-hidden="true" />}
       <p className={styles.credit}>
         {!hidden && (
           <a href={picture.pageUrl} target="_blank" rel="noopener noreferrer">
