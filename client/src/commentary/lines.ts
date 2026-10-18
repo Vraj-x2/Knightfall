@@ -1,7 +1,7 @@
-import type { EventKind, EndKind } from './events';
+import type { EventKind, EndKind, InfoKind } from './events';
 
-// Templates per event. Blanks in braces are filled from CommentFacts: {player} {opponent} {side} {piece} {captured} {to} {promoted}.
-export const LINES: Record<EventKind | EndKind, string[]> = {
+// Templates per event. Blanks in braces are filled from CommentFacts: {player} {opponent} {side} {piece} {captured} {to} {promoted} {opening}.
+export const LINES: Record<EventKind | EndKind | InfoKind, string[]> = {
   checkmate: [
     'Checkmate! {player} finishes it in style!',
     "And that's mate! {opponent}'s king has nowhere to run!",
@@ -173,6 +173,18 @@ export const LINES: Record<EventKind | EndKind, string[]> = {
     'A waiting move from {player}. Your turn, {opponent}!',
     'The {piece} slides over to {to}.',
     "{player} takes a breather. {piece} to {to}.",
+  ],
+  openingName: [
+    "We're in the {opening}!",
+    'And this is the {opening}, folks!',
+    'The {opening} is on the board!',
+    'Book move! We have reached the {opening}.',
+    "Opening alert: it's the {opening}!",
+    'Ladies and gentlemen, the {opening}!',
+    'A familiar sight: the {opening}.',
+    'The players steer into the {opening}!',
+    "Straight out of the opening books: the {opening}!",
+    'Here comes the {opening}!',
   ],
   resignation: [
     '{player} resigns! {opponent} takes the win!',

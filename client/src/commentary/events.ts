@@ -21,6 +21,7 @@ export type EventKind =
   | 'quiet';
 
 export type EndKind = 'resignation' | 'timeout' | 'draw' | 'stalemate';
+export type InfoKind = 'openingName';
 
 // The facts a line may mention. Every field is read off the real board, so lines can't invent anything.
 export type CommentFacts = {
@@ -31,9 +32,10 @@ export type CommentFacts = {
   captured: string;
   to: string;
   promoted: string;
+  opening?: string;
 };
 
-export type CommentEvent = { kind: EventKind | EndKind; facts: CommentFacts };
+export type CommentEvent = { kind: EventKind | EndKind | InfoKind; facts: CommentFacts };
 
 const NAMES: Record<PieceSymbol, string> = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
 const SIDE: Record<Color, string> = { w: 'White', b: 'Black' };
@@ -42,7 +44,7 @@ const OPENING_PLIES = 4;
 
 export type Names = Record<Color, string>;
 
-function factsFor(move: Pick<Move, 'color' | 'piece' | 'to' | 'captured' | 'promotion'>, names: Names): CommentFacts {
+export function factsFor(move: Pick<Move, 'color' | 'piece' | 'to' | 'captured' | 'promotion'>, names: Names): CommentFacts {
   return {
     side: SIDE[move.color],
     player: names[move.color] || SIDE[move.color],

@@ -1,40 +1,28 @@
-import { useEffect, useState } from 'react';
 import type { Names } from './events';
-import { loadVoiceOn, saveVoiceOn, speechSupported, stopSpeaking } from './speech';
 import { useCommentary } from './useCommentary';
 import styles from './Commentary.module.css';
 
 export function CommentaryPanel({ names }: { names: Names }) {
-  const [voiceOn, setVoiceOn] = useState(() => speechSupported() && loadVoiceOn());
-  const lines = useCommentary(names, voiceOn);
-
-  useEffect(() => stopSpeaking, []); // leaving the game silences the commentator
-
+  const lines = useCommentary(names);
   return (
     <section className={styles.panel} aria-labelledby="commentary-title">
       <div className={styles.header}>
         <span className={styles.onAir} aria-hidden="true" />
         <h2 id="commentary-title">Commentary</h2>
-        {speechSupported() && (
-          <button
-            className={styles.voice}
-            aria-pressed={voiceOn}
-            onClick={() => {
-              saveVoiceOn(!voiceOn);
-              setVoiceOn(!voiceOn);
-            }}
-          >
-            {voiceOn ? 'Voice on' : 'Voice off'}
-          </button>
-        )}
       </div>
       {lines.length === 0 ? (
         <p className={styles.empty}>The commentator is ready. Make a move!</p>
       ) : (
         <ol className={styles.feed}>
           {lines.map((line, i) => (
-            <li key={line.id} className={i === 0 ? styles.latest : undefined}>
+            <li key={line.id} className={`${i === 0 ? styles.latest : ''} ${line.source ? styles.fact : ''}`}>
+              {line.source && <span className={styles.factTag}>Did you know?</span>}
               {line.text}
+              {line.source && (
+                <a className={styles.sourceLink} href={line.source.url} target="_blank" rel="noopener noreferrer">
+                  Wikipedia: {line.source.title}
+                </a>
+              )}
             </li>
           ))}
         </ol>
