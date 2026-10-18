@@ -14,6 +14,8 @@ import {
   legalMovesFrom,
 } from '../game/selectors';
 import { useMoveFeedback } from '../game/useMoveFeedback';
+import { ReactionOverlay } from '../extras/ReactionOverlay';
+import { useReaction } from '../extras/useReaction';
 import type { PromotionPiece } from '../net/protocol';
 import { loadName, saveName } from '../net/socket';
 import { EngineCredit } from '../panels/EngineCredit';
@@ -40,6 +42,7 @@ export function GameScreen({ actions }: { actions: GameActions }) {
   const skipSlide = useRef(false);
   const [myName, setMyName] = useState(loadName);
   const animatedPly = useMoveFeedback(state, skipSlide);
+  const reaction = useReaction();
   const { myColor, selected, pendingPromotion } = state;
   const interactive = canMove(state, game);
   const targets = selected ? legalMovesFrom(game, selected) : [];
@@ -107,6 +110,7 @@ export function GameScreen({ actions }: { actions: GameActions }) {
             onTap={onTap}
             onCancel={() => dispatch({ type: 'DESELECT' })}
           />
+          <ReactionOverlay reaction={reaction} />
           {pendingPromotion && myColor && (
             <PromotionPicker
               color={myColor}

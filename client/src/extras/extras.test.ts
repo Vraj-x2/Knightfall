@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getSpacePicture } from './apod';
 import { adviceSlip, dadJoke, kanyeQuote } from './funApis';
+import { findReaction } from './giphy';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const NOW = new Date(2026, 9, 18, 0, 30); // just after midnight: today's picture may not be out yet
@@ -61,5 +62,36 @@ describe('fun APIs', () => {
     expect(await dadJoke(broken)).toBeNull();
     expect(await kanyeQuote((async () => new Response('nope', { status: 503 })) as typeof fetch)).toBeNull();
     expect(await adviceSlip((async () => new Response('not json')) as typeof fetch)).toBeNull();
+  });
+});
+
+describe('Giphy reactions', () => {
+  const gif = (n: number) => ({ title: `gif ${n}`, url: `https://giphy.com/${n}`, images: { fixed_height: { webp: `https://media/${n}.webp`, url: `https://media/${n}.gif` } } });
+
+  it('stays off without a key', async () => {
+    let called = false;
+    const fetcher = (async () => {
+      called = true;
+      return json({ data: [gif(1)] });
+    }) as typeof fetch;
+    expect(await findReaction('blunder', fetcher, Math.random, '')).toBeNull();
+    expect(called).toBe(false);
+  });
+
+  it('searches a family-friendly GIF for the moment and picks one', async () => {
+    let asked: URLSearchParams | null = null;
+    const fetcher = (async (url: string) => {
+      asked = new URL(url).searchParams;
+      return json({ data: [gif(1), gif(2)] });
+    }) as typeof fetch;
+    const reaction = await findReaction('checkmate', fetcher, () => 0.99, 'key');
+    expect(asked!.get('rating')).toBe('g');
+    expect(asked!.get('q')).toBe('game over');
+    expect(reaction).toEqual({ url: 'https://media/2.webp', title: 'gif 2', pageUrl: 'https://giphy.com/2' });
+  });
+
+  it('returns null when Giphy fails or finds nothing', async () => {
+    expect(await findReaction('blunder', (async () => json({ message: 'Unauthorized' }, 401)) as typeof fetch, Math.random, 'bad')).toBeNull();
+    expect(await findReaction('blunder', (async () => json({ data: [] })) as typeof fetch, Math.random, 'key')).toBeNull();
   });
 });

@@ -1,0 +1,28 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.card {
+  margin: 0;
+  padding: 6px 6px 4px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 40px #00000059;
+  animation: pop 3.5s ease both;
+}
+.card img { display: block; height: min(180px, 30vw); width: auto; max-width: 70vw; border-radius: 9px; }
+.card figcaption { margin-top: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); text-align: center; }
+@keyframes pop {
+  0% { opacity: 0; transform: scale(0.6) rotate(-4deg); }
+  10% { opacity: 1; transform: scale(1.05) rotate(1deg); }
+  15%, 85% { opacity: 1; transform: scale(1) rotate(0); }
+  100% { opacity: 0; transform: scale(0.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: fade 3.5s linear both; }
+  @keyframes fade { 0%, 100% { opacity: 0; } 5%, 90% { opacity: 1; } }
+}
