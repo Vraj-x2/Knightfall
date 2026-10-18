@@ -39,9 +39,9 @@ export type GameActions = {
 
 export function GameScreen({ actions }: { actions: GameActions }) {
   const { state, dispatch, game, viewGame, shownMoves } = useGame();
-  const skipSlide = useRef(false);
+  const skipSlideRef = useRef(false);
   const [myName, setMyName] = useState(loadName);
-  const animatedPly = useMoveFeedback(state, skipSlide);
+  const animatedPly = useMoveFeedback(state, skipSlideRef);
   const reaction = useReaction();
   const { myColor, selected, pendingPromotion } = state;
   const interactive = canMove(state, game);
@@ -54,7 +54,7 @@ export function GameScreen({ actions }: { actions: GameActions }) {
     const legal = findLegalMove(game, from, to, promotion);
     if (!legal) return dispatch({ type: 'DESELECT' });
     const ply = state.moves.length;
-    skipSlide.current = viaDrop;
+    skipSlideRef.current = viaDrop;
     dispatch({ type: 'LOCAL_MOVE', move: { from, to, promotion, san: legal.san } });
     if (!actions.onMove({ from, to, promotion, ply })) {
       dispatch({ type: 'SERVER_SYNC', moves: state.moves });

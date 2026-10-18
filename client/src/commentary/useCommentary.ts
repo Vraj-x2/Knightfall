@@ -37,7 +37,9 @@ export function useCommentary(names: Names): { lines: CommentLine[]; opening: st
   const seen = useRef<{ plies: number; ended: boolean } | null>(null);
   const nextId = useRef(0);
   const namesRef = useRef(names);
-  namesRef.current = names;
+  useEffect(() => {
+    namesRef.current = names; // read by the effect below, which shouldn't re-run on a rename
+  });
   // Per game: the opening family last announced and the articles already quoted. `epoch` drops answers
   // that arrive after a rematch has started.
   const opening = useRef({ epoch: 0, family: '', quoted: new Set<string>() });

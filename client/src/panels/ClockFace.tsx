@@ -11,16 +11,16 @@ export function ClockFace({ color }: { color: Color }) {
   const { state } = useGame();
   const { clock, result } = state;
   const running = clock?.running === color && !result;
-  const [, setTick] = useState(0);
+  const [now, setNow] = useState(() => performance.now());
 
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => setTick((t) => t + 1), TICK_MS);
+    const id = window.setInterval(() => setNow(performance.now()), TICK_MS);
     return () => window.clearInterval(id);
   }, [running]);
 
   if (!clock) return null;
-  const ms = remainingMs(clock, color, performance.now());
+  const ms = remainingMs(clock, color, now);
   const text = formatClock(ms);
   const cls = [styles.clock, running && styles.clockActive, ms < LOW_MS && styles.clockLow].filter(Boolean).join(' ');
   // role=timer is announced on focus only (aria-live off), so screen readers are not spammed every tenth of a second.

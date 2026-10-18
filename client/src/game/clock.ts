@@ -4,7 +4,7 @@ import type { ClockSnapshot, Color } from '../net/protocol';
 export type ClockState = ClockSnapshot & { receivedAt: number };
 
 export function remainingMs(clock: ClockState, color: Color, now: number): number {
-  const elapsed = clock.running === color ? now - clock.receivedAt : 0;
+  const elapsed = clock.running === color ? Math.max(0, now - clock.receivedAt) : 0;
   return Math.max(0, clock[color] - elapsed);
 }
 
