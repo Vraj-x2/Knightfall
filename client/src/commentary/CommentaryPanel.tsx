@@ -15,8 +15,8 @@ export function CommentaryPanel({ names }: { names: Names }) {
       ) : (
         <ol className={styles.feed}>
           {lines.map((line, i) => (
-            <li key={line.id} className={`${i === 0 ? styles.latest : ''} ${line.source ? styles.fact : ''}`}>
-              {line.source && <span className={styles.factTag}>Did you know?</span>}
+            <li key={line.id} className={`${i === 0 ? styles.latest : ''} ${line.tag ? styles.fact : ''}`}>
+              {line.tag && <span className={styles.factTag}>{line.tag}</span>}
               {line.text}
               {line.source && (
                 <a className={styles.sourceLink} href={line.source.url} target="_blank" rel="noopener noreferrer">

@@ -4,11 +4,14 @@ import { useGame } from '../game/GameContext';
 import { detectEndEvent, detectMoveEvent, factsFor, type Names } from './events';
 import { createLinePicker } from './linePicker';
 import { loadOpenings, openingName } from './openings';
+import { adviceSlip, dadJoke, kanyeQuote } from '../extras/funApis';
 import { findOpeningFact, type OpeningFact } from './wikipedia';
 
-export type CommentLine = { id: number; text: string; source?: { title: string; url: string } };
+export type CommentLine = { id: number; text: string; tag?: string; source?: { title: string; url: string } };
+type Pending = Omit<CommentLine, 'id'>;
 const MAX_LINES = 40;
 const OPENING_PLIES = 30; // past this, a named position is a coincidence, not the opening
+const BIT_COOLDOWN_PLIES = 6; // at most one joke or piece of advice this often, so the feed stays about the game
 
 const family = (opening: string) => opening.split(':')[0];
 
@@ -25,6 +28,7 @@ export function useCommentary(names: Names): CommentLine[] {
   // Per game: the opening family last announced and the articles already quoted. `epoch` drops answers
   // that arrive after a rematch has started.
   const opening = useRef({ epoch: 0, family: '', quoted: new Set<string>() });
+  const lastBitPly = useRef(-BIT_COOLDOWN_PLIES);
   const [book, setBook] = useState<Record<string, string> | null>(null);
   const { moves, result, myColor } = state;
 
@@ -35,20 +39,41 @@ export function useCommentary(names: Names): CommentLine[] {
   }, []);
 
   useEffect(() => {
-    const add = (entries: Omit<CommentLine, 'id'>[]) =>
+    const add = (entries: Pending[]) =>
       setLines((prev) => [...entries.reverse().map((e) => ({ ...e, id: nextId.current++ })), ...prev].slice(0, MAX_LINES));
 
-    function announceOpening(move: Move, ply: number): Omit<CommentLine, 'id'> | null {
+    // Lines from outside services arrive later; anything that lands after a rematch started is dropped.
+    function addLater(load: Promise<Pending | null>) {
+      const epoch = opening.current.epoch;
+      void load.then((line) => {
+        if (line && opening.current.epoch === epoch) add([line]);
+      });
+    }
+
+    // The mover's big moments: trash talk after winning material, advice after leaving a piece hanging. Rate limited.
+    function addBit(kind: string, ply: number, player: string) {
+      if (ply - lastBitPly.current < BIT_COOLDOWN_PLIES) return;
+      if (kind === 'queenTaken' || kind === 'bigCapture') {
+        lastBitPly.current = ply;
+        addLater(dadJoke().then((joke) => (joke ? { tag: `Trash talk from ${player}`, text: joke } : null)));
+      } else if (kind === 'hangingPiece') {
+        lastBitPly.current = ply;
+        addLater(adviceSlip().then((advice) => (advice ? { tag: `Life advice for ${player}`, text: advice } : null)));
+      }
+    }
+
+    function announceOpening(move: Move, ply: number): Pending | null {
       const name = book && ply < OPENING_PLIES ? openingName(book, game) : null;
       const tracker = opening.current;
       if (!name || family(name) === tracker.family) return null;
       tracker.family = family(name);
-      const epoch = tracker.epoch;
-      void findOpeningFact(name).then((fact: OpeningFact | null) => {
-        if (!fact || opening.current.epoch !== epoch || opening.current.quoted.has(fact.title)) return;
-        opening.current.quoted.add(fact.title);
-        add([{ text: fact.text, source: { title: fact.title, url: fact.url } }]);
-      });
+      addLater(
+        findOpeningFact(name).then((fact: OpeningFact | null) => {
+          if (!fact || opening.current.quoted.has(fact.title)) return null;
+          opening.current.quoted.add(fact.title);
+          return { tag: 'Did you know?', text: fact.text, source: { title: fact.title, url: fact.url } };
+        }),
+      );
       return { text: pick({ kind: 'openingName', facts: { ...factsFor(move, namesRef.current), opening: name } }) };
     }
 
@@ -61,12 +86,15 @@ export function useCommentary(names: Names): CommentLine[] {
       // A rematch started.
       setLines([]);
       opening.current = { epoch: opening.current.epoch + 1, family: '', quoted: new Set() };
+      lastBitPly.current = -BIT_COOLDOWN_PLIES;
     }
-    const said: Omit<CommentLine, 'id'>[] = [];
+    const said: Pending[] = [];
     if (moves.length === before.plies + 1) {
       const move = game.history({ verbose: true }).at(-1);
       if (move) {
-        said.push({ text: pick(detectMoveEvent(game, move, moves.length - 1, namesRef.current)) });
+        const event = detectMoveEvent(game, move, moves.length - 1, namesRef.current);
+        said.push({ text: pick(event) });
+        addBit(event.kind, moves.length - 1, event.facts.player);
         const named = announceOpening(move, moves.length - 1);
         if (named) said.push(named);
       }
@@ -74,6 +102,10 @@ export function useCommentary(names: Names): CommentLine[] {
     if (result && !before.ended) {
       const end = detectEndEvent(result, namesRef.current);
       if (end) said.push({ text: pick(end) });
+      if (result.winner) {
+        const winner = namesRef.current[result.winner] || (result.winner === 'w' ? 'White' : 'Black');
+        addLater(kanyeQuote().then((quote) => (quote ? { tag: `Post-game interview with ${winner}`, text: `“${quote}”` } : null)));
+      }
     }
     if (said.length > 0) add(said);
   }, [moves, result, myColor, game, pick, book]);
