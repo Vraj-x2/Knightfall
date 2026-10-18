@@ -82,3 +82,10 @@ describe('line picker', () => {
     }
   });
 });
+
+describe('fill capitalisation', () => {
+  it('capitalises a blank that starts a later sentence', () => {
+    const facts = { side: 'White', player: 'Ana', opponent: 'Ben', piece: 'pawn', captured: '', to: 'd4', promoted: '' };
+    expect(fill('{player} keeps it calm. {piece} to {to}.', facts)).toBe('Ana keeps it calm. Pawn to d4.');
+  });
+});

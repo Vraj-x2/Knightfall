@@ -14,7 +14,8 @@ function shuffled(count: number, random: () => number): number[] {
 
 export function fill(template: string, facts: CommentFacts): string {
   const text = template.replace(/\{(\w+)\}/g, (_, key: string) => facts[key as keyof CommentFacts] ?? '');
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  // Capitalise each sentence, since a blank like {piece} can start one ("Calm. Pawn to d4.").
+  return text.replace(/(^|[.!?]\s+)([a-z])/g, (_, lead: string, letter: string) => lead + letter.toUpperCase());
 }
 
 // A shuffle bag per event kind: every template is used once before any repeats,

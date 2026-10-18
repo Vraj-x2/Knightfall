@@ -83,6 +83,7 @@ export function GameScreen({ actions }: { actions: GameActions }) {
   const gameLive = !state.result && state.connection === 'open' && state.opponentOnline;
   const orientation = myColor ?? 'w';
   const opponent = orientation === 'w' ? 'b' : 'w';
+  const spokenOpponent = state.opponentName.replace(/\s*\(.*\)$/, ''); // "Stockfish (Beginner)" -> "Stockfish"
   const slideKey = animatedPly !== null && animatedPly === shownMoves.length ? String(animatedPly) : null;
 
   return (
@@ -127,7 +128,7 @@ export function GameScreen({ actions }: { actions: GameActions }) {
           {gameLive && <Resign onResign={actions.onResign} />}
           {state.result && <RematchButton onRematch={actions.onRematch} />}
         </div>
-        <CommentaryPanel names={orientation === 'w' ? { w: myName, b: state.opponentName } : { w: state.opponentName, b: myName }} />
+        <CommentaryPanel names={orientation === 'w' ? { w: myName, b: spokenOpponent } : { w: spokenOpponent, b: myName }} />
         <MoveList />
         {actions.solo && <EngineCredit />}
       </aside>

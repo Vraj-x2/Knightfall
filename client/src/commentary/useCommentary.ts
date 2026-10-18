@@ -7,19 +7,32 @@ import { loadOpenings, openingName } from './openings';
 import { adviceSlip, dadJoke, kanyeQuote } from '../extras/funApis';
 import { findOpeningFact, type OpeningFact } from './wikipedia';
 
-export type CommentLine = { id: number; text: string; tag?: string; source?: { title: string; url: string } };
+import type { Color } from '../net/protocol';
+import type { LineKind } from './lineStyle';
+
+export type CommentLine = {
+  id: number;
+  kind: LineKind;
+  text: string;
+  tag?: string;
+  move?: { number: number; san: string; color: Color };
+  source?: { title: string; url: string };
+};
 type Pending = Omit<CommentLine, 'id'>;
 const MAX_LINES = 40;
 const OPENING_PLIES = 30; // past this, a named position is a coincidence, not the opening
 const BIT_COOLDOWN_PLIES = 6; // at most one joke or piece of advice this often, so the feed stays about the game
 
 const family = (opening: string) => opening.split(':')[0];
+// "the Sicilian Defense", but "Petrov's Defense" and "Ruy Lopez" read better bare.
+const withArticle = (opening: string) => (/^[A-Z][a-z]+ [A-Z]/.test(opening) && !opening.includes("'s ") && !/^Ruy Lopez/.test(opening) ? `the ${opening}` : opening);
 
 // Turns each new move (and the game's end) into commentator lines, newest first, and names the opening
 // with a fact from Wikipedia. History delivered on join or reconnect is skipped: commentary is for live moves.
-export function useCommentary(names: Names): CommentLine[] {
+export function useCommentary(names: Names): { lines: CommentLine[]; opening: string | null } {
   const { state, game } = useGame();
   const [lines, setLines] = useState<CommentLine[]>([]);
+  const [currentOpening, setCurrentOpening] = useState<string | null>(null);
   const pick = useMemo(() => createLinePicker(), []);
   const seen = useRef<{ plies: number; ended: boolean } | null>(null);
   const nextId = useRef(0);
@@ -39,8 +52,11 @@ export function useCommentary(names: Names): CommentLine[] {
   }, []);
 
   useEffect(() => {
-    const add = (entries: Pending[]) =>
-      setLines((prev) => [...entries.reverse().map((e) => ({ ...e, id: nextId.current++ })), ...prev].slice(0, MAX_LINES));
+    const add = (entries: Pending[]) => {
+      // Ids are assigned outside the updater: React may run an updater twice, which must not change the result.
+      const numbered = [...entries].reverse().map((e) => ({ ...e, id: nextId.current++ }));
+      setLines((prev) => [...numbered, ...prev].slice(0, MAX_LINES));
+    };
 
     // Lines from outside services arrive later; anything that lands after a rematch started is dropped.
     function addLater(load: Promise<Pending | null>) {
@@ -55,10 +71,10 @@ export function useCommentary(names: Names): CommentLine[] {
       if (ply - lastBitPly.current < BIT_COOLDOWN_PLIES) return;
       if (kind === 'queenTaken' || kind === 'bigCapture') {
         lastBitPly.current = ply;
-        addLater(dadJoke().then((joke) => (joke ? { tag: `Trash talk from ${player}`, text: joke } : null)));
+        addLater(dadJoke().then((joke) => (joke ? { kind: 'trash', tag: `Trash talk from ${player}`, text: joke } : null)));
       } else if (kind === 'hangingPiece') {
         lastBitPly.current = ply;
-        addLater(adviceSlip().then((advice) => (advice ? { tag: `Life advice for ${player}`, text: advice } : null)));
+        addLater(adviceSlip().then((advice) => (advice ? { kind: 'advice', tag: `Life advice for ${player}`, text: advice } : null)));
       }
     }
 
@@ -67,14 +83,15 @@ export function useCommentary(names: Names): CommentLine[] {
       const tracker = opening.current;
       if (!name || family(name) === tracker.family) return null;
       tracker.family = family(name);
+      setCurrentOpening(name);
       addLater(
         findOpeningFact(name).then((fact: OpeningFact | null) => {
           if (!fact || opening.current.quoted.has(fact.title)) return null;
           opening.current.quoted.add(fact.title);
-          return { tag: 'Did you know?', text: fact.text, source: { title: fact.title, url: fact.url } };
+          return { kind: 'fact', tag: 'Did you know?', text: fact.text, source: { title: fact.title, url: fact.url } };
         }),
       );
-      return { text: pick({ kind: 'openingName', facts: { ...factsFor(move, namesRef.current), opening: name } }) };
+      return { kind: 'openingName', text: pick({ kind: 'openingName', facts: { ...factsFor(move, namesRef.current), opening: withArticle(name) } }) };
     }
 
     if (myColor === null) return;
@@ -85,6 +102,7 @@ export function useCommentary(names: Names): CommentLine[] {
     if (moves.length < before.plies) {
       // A rematch started.
       setLines([]);
+      setCurrentOpening(null);
       opening.current = { epoch: opening.current.epoch + 1, family: '', quoted: new Set() };
       lastBitPly.current = -BIT_COOLDOWN_PLIES;
     }
@@ -93,7 +111,7 @@ export function useCommentary(names: Names): CommentLine[] {
       const move = game.history({ verbose: true }).at(-1);
       if (move) {
         const event = detectMoveEvent(game, move, moves.length - 1, namesRef.current);
-        said.push({ text: pick(event) });
+        said.push({ kind: event.kind, text: pick(event), move: { number: Math.floor((moves.length - 1) / 2) + 1, san: move.san, color: move.color } });
         addBit(event.kind, moves.length - 1, event.facts.player);
         const named = announceOpening(move, moves.length - 1);
         if (named) said.push(named);
@@ -101,14 +119,14 @@ export function useCommentary(names: Names): CommentLine[] {
     }
     if (result && !before.ended) {
       const end = detectEndEvent(result, namesRef.current);
-      if (end) said.push({ text: pick(end) });
+      if (end) said.push({ kind: end.kind, text: pick(end) });
       if (result.winner) {
         const winner = namesRef.current[result.winner] || (result.winner === 'w' ? 'White' : 'Black');
-        addLater(kanyeQuote().then((quote) => (quote ? { tag: `Post-game interview with ${winner}`, text: `“${quote}”` } : null)));
+        addLater(kanyeQuote().then((quote) => (quote ? { kind: 'interview', tag: `Post-game interview with ${winner}`, text: `“${quote}”` } : null)));
       }
     }
     if (said.length > 0) add(said);
   }, [moves, result, myColor, game, pick, book]);
 
-  return lines;
+  return { lines, opening: currentOpening };
 }
