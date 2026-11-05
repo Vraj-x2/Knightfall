@@ -1,0 +1,10 @@
+// Cloudflare Workers static-assets deploy for the built client.
+{
+  "name": "knightfall",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html for client routes like /g/abc123.
+    "not_found_handling": "single-page-application"
+  }
+}
